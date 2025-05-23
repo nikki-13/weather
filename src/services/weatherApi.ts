@@ -1,4 +1,3 @@
-
 import { WeatherData, WeatherLocation, ForecastData } from "@/types/weather";
 
 // Get WeatherAPI.com API key from environment variables with fallback
@@ -10,6 +9,30 @@ const MOCK_ENABLED = API_KEY === "" || import.meta.env.VITE_USE_MOCK_DATA === "t
 
 // Import mock data
 import { mockLocations, mockWeatherData, mockForecastData } from "./mockData";
+
+// Function to get user's default location from localStorage if it exists
+export const getDefaultLocation = (): { lat: number, lon: number, name: string, country: string } | null => {
+  try {
+    const savedLocation = localStorage.getItem('defaultLocation');
+    if (savedLocation) {
+      return JSON.parse(savedLocation);
+    }
+    return null;
+  } catch (error) {
+    console.error("Error retrieving saved location:", error);
+    return null;
+  }
+};
+
+// Function to save a location as default
+export const saveDefaultLocation = (location: { lat: number, lon: number, name: string, country: string }): void => {
+  try {
+    localStorage.setItem('defaultLocation', JSON.stringify(location));
+    console.log("Location saved as default:", location);
+  } catch (error) {
+    console.error("Error saving default location:", error);
+  }
+};
 
 // Helper function to convert WeatherAPI.com format to OpenWeatherMap format
 const convertWeatherApiToOpenWeatherFormat = (data: any): WeatherData => {
