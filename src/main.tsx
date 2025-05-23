@@ -23,9 +23,11 @@ if (!rootElement) {
   console.error('Root element not found! Cannot mount React application.');
   document.body.innerHTML = '<h1>Error: Could not find root element to mount application</h1>';
 } else {
+  // Create the root instance once
+  const root = createRoot(rootElement);
+
   // Immediately render a basic loading state
-  const loadingRoot = createRoot(rootElement);
-  loadingRoot.render(
+  root.render(
     <div style={{ textAlign: 'center', marginTop: '3rem' }}>
       <h1>Loading Weather Dashboard...</h1>
       <p>Initializing application...</p>
@@ -44,7 +46,8 @@ if (!rootElement) {
       // Render the app regardless of database initialization result
       console.log('About to render React app...');
       try {
-        createRoot(rootElement).render(
+        // Use the existing root to render the app
+        root.render(
           <React.StrictMode>
             <App />
           </React.StrictMode>
@@ -52,7 +55,8 @@ if (!rootElement) {
         console.log('React app rendered successfully');
       } catch (error) {
         console.error('Error rendering React app:', error);
-        createRoot(rootElement).render(
+        // Use the existing root to render the error
+        root.render(
           <div style={{ textAlign: 'center', marginTop: '3rem', color: 'red' }}>
             <h1>Error Starting Application</h1>
             <p>There was a problem rendering the application. Please check the console for details.</p>
@@ -65,7 +69,8 @@ if (!rootElement) {
     })
     .catch(error => {
       console.error('Critical error during app initialization:', error);
-      createRoot(rootElement).render(
+      // Use the existing root to render the critical error
+      root.render(
         <div style={{ textAlign: 'center', marginTop: '3rem', color: 'red' }}>
           <h1>Application Initialization Failed</h1>
           <p>There was a problem initializing the database. Please check the console for details.</p>

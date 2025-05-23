@@ -297,6 +297,12 @@ export const getWeatherByGeolocation = async (): Promise<{ weather: WeatherData,
     }
 
     return new Promise((resolve, reject) => {
+      const options: PositionOptions = {
+        enableHighAccuracy: false, // Try with lower accuracy
+        timeout: 10000,
+        maximumAge: 0
+      };
+
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
@@ -316,7 +322,22 @@ export const getWeatherByGeolocation = async (): Promise<{ weather: WeatherData,
           }
         },
         (error) => {
-          console.error(`Geolocation error: ${error.message}`);
+          let errorMessage = `Geolocation error: ${error.message} (Code: ${error.code})`;
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += " - User denied the request for Geolocation.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += " - Location information is unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMessage += " - The request to get user location timed out.";
+              break;
+            default:
+              errorMessage += " - An unknown error occurred (Code: " + error.code + ")."; // Added code here too
+              break;
+          }
+          console.error(errorMessage);
           
           // Fall back to mock data
           console.log("Falling back to mock geolocation data due to geolocation error");
@@ -327,9 +348,12 @@ export const getWeatherByGeolocation = async (): Promise<{ weather: WeatherData,
                 location: `${mockLocations[0].name}, ${mockLocations[0].country}` 
               });
             })
-            .catch(err => reject(err));
+            .catch(err => {
+              console.error("Error falling back to mock data after geolocation error:", err);
+              reject(err); // Ensure the promise is rejected if fallback fails
+            });
         },
-        { timeout: 5000 } // Add a timeout to avoid long waits
+        options // Use the new options object
       );
     });
   } catch (error) {
@@ -434,18 +458,15 @@ export const getHistoricalWeather = async (
   } catch (error) {
     console.error("Error fetching historical weather:", error);
     
-    // Fall back to forecast data if historical data fails
-    console.log("Falling back to forecast data for historical request");
-    const forecastData = await getForecast(lat, lon);
     
     // Modify the list to simulate historical data
     const timeDiff = endDate.getTime() - startDate.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
-    const historicalList = forecastData.list.map((item, index) => {
+    const historicalList = mockForecastData.list.map((item, index) => {
       const historicalDate = new Date(startDate);
       historicalDate.setHours(
-        historicalDate.getHours() + Math.floor(index * (daysDiff * 24) / forecastData.list.length)
+        historicalDate.getHours() + Math.floor(index * (daysDiff * 24) / mockForecastData.list.length)
       );
       
       return {
@@ -456,7 +477,7 @@ export const getHistoricalWeather = async (
     });
     
     return {
-      ...forecastData,
+      ...mockForecastData,
       list: historicalList
     };
   }

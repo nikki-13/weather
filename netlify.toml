@@ -1,6 +1,11 @@
 [build]
   publish = "dist"
   command = "bun run build"
+  # Environment variables can be set in the Netlify UI (recommended for sensitive keys)
+  # or defined here for non-sensitive build-time variables.
+  # Example:
+  # [build.environment]
+  #   MY_VARIABLE = "my_value"
 
 [[headers]]
   for = "/*.js"
