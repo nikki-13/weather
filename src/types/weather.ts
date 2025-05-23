@@ -139,6 +139,15 @@ export interface TemperatureRecord {
   temp: number;
   feels_like?: number;
   description?: string;
+  pressure?: number;
+  visibility?: number;
+  cloudiness?: number;
+  rain_1h?: number;
+  snow_1h?: number;
+  temp_min?: number;
+  temp_max?: number;
+  wind_deg?: number;
+  wind_gust?: number;
   icon?: string;
   humidity?: number;
   wind_speed?: number;

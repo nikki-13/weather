@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/components/ui/use-toast";
 import { WeatherLocation, DateRange } from "@/types/weather";
 import { formatDate, validateDateRange } from "@/lib/weatherUtils";
-import { createWeatherRecord } from "@/services/weatherHistoryDb";
+import { createWeatherRecord_db } from "@/services/weatherHistoryDb_sql";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -65,7 +65,7 @@ const WeatherHistoryForm = ({ onSaveRecord }: WeatherHistoryFormProps) => {
     setShowResults(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate inputs
@@ -90,8 +90,8 @@ const WeatherHistoryForm = ({ onSaveRecord }: WeatherHistoryFormProps) => {
     }
 
     try {
-      // Save to local database
-      createWeatherRecord({
+      // Save to SQLite database
+      await createWeatherRecord_db({
         location: `${selectedLocation.name}, ${selectedLocation.country}`,
         lat: selectedLocation.lat,
         lon: selectedLocation.lon,

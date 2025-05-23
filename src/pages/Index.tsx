@@ -8,9 +8,12 @@ import CurrentWeather from "@/components/CurrentWeather";
 import ForecastWeather from "@/components/ForecastWeather";
 import WeatherHistoryForm from "@/components/WeatherHistoryForm";
 import WeatherHistoryList from "@/components/WeatherHistoryList";
+import DatabaseStatus from "@/components/DatabaseStatus";
+// Import the migration tool
+import DataMigrationTool from "@/components/DataMigrationTool";
 import { WeatherLocation, WeatherData, ForecastData, WeatherView, WeatherHistoryRecord } from "@/types/weather";
 import { getCurrentWeather, getForecast, getWeatherByGeolocation } from "@/services/weatherApi";
-import { getAllWeatherRecords } from "@/services/weatherHistoryDb";
+import { getAllWeatherRecords_db } from "@/services/weatherHistoryDb_sql";
 
 const Index = () => {
   const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
@@ -26,8 +29,8 @@ const Index = () => {
     loadHistoryRecords();
   }, []);
 
-  const loadHistoryRecords = () => {
-    const records = getAllWeatherRecords();
+  const loadHistoryRecords = async () => {
+    const records = await getAllWeatherRecords_db();
     setHistoryRecords(records);
   };
 
@@ -172,6 +175,12 @@ const Index = () => {
         </TabsContent>
 
         <TabsContent value="history">
+          {/* Database components */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <DatabaseStatus />
+            <DataMigrationTool />
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <WeatherHistoryForm onSaveRecord={handleHistoryUpdate} />

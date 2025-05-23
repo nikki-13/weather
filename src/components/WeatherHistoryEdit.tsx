@@ -7,7 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
 import { WeatherHistoryRecord } from "@/types/weather";
-import { updateWeatherRecord } from "@/services/weatherHistoryDb";
+import { updateWeatherRecord_db } from "@/services/weatherHistoryDb_sql";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -24,7 +24,7 @@ const WeatherHistoryEdit = ({ record, onSave }: WeatherHistoryEditProps) => {
   const [endDate, setEndDate] = useState<Date>(new Date(record.endDate));
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate date range
@@ -39,7 +39,7 @@ const WeatherHistoryEdit = ({ record, onSave }: WeatherHistoryEditProps) => {
     }
 
     try {
-      updateWeatherRecord(record.id, {
+      await updateWeatherRecord_db(record.id, {
         location,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),

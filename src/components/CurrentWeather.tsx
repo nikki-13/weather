@@ -17,7 +17,7 @@ interface CurrentWeatherProps {
 }
 
 const CurrentWeather = ({ data }: CurrentWeatherProps) => {
-  const { dt, main, weather, wind, sys, name } = data;
+  const { dt, main, weather, wind, sys, name, visibility, clouds, rain, snow } = data;
   const isDay = isDaytime(dt, sys.sunrise, sys.sunset);
   const iconName = getWeatherIconName(weather[0].id, isDay);
   
@@ -45,6 +45,7 @@ const CurrentWeather = ({ data }: CurrentWeatherProps) => {
       
       <CardContent className="p-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* First row: Primary metrics */}
           <div className="text-center">
             <div className="text-sm text-muted-foreground">Wind</div>
             <div className="font-semibold">{Math.round(wind.speed)} m/s</div>
@@ -55,6 +56,54 @@ const CurrentWeather = ({ data }: CurrentWeatherProps) => {
             <div className="text-sm text-muted-foreground">Humidity</div>
             <div className="font-semibold">{main.humidity}%</div>
           </div>
+          
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground">Pressure</div>
+            <div className="font-semibold">{main.pressure} hPa</div>
+          </div>
+
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground">Visibility</div>
+            <div className="font-semibold">{(visibility / 1000).toFixed(1)} km</div>
+          </div>
+
+          {/* Second row: Additional metrics */}
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground">Min Temp</div>
+            <div className="font-semibold">{Math.round(main.temp_min)}°C</div>
+          </div>
+
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground">Max Temp</div>
+            <div className="font-semibold">{Math.round(main.temp_max)}°C</div>
+          </div>
+
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground">Cloudiness</div>
+            <div className="font-semibold">{clouds.all}%</div>
+          </div>
+          
+          {/* Conditionally available data */}
+          {wind.gust && (
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Wind Gust</div>
+              <div className="font-semibold">{Math.round(wind.gust)} m/s</div>
+            </div>
+          )}
+          
+          {rain && rain["1h"] !== undefined && (
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Rain (1h)</div>
+              <div className="font-semibold">{rain["1h"]} mm</div>
+            </div>
+          )}
+          
+          {snow && snow["1h"] !== undefined && (
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Snow (1h)</div>
+              <div className="font-semibold">{snow["1h"]} mm</div>
+            </div>
+          )}
           
           {sys.sunrise !== 0 && (
             <div className="text-center">

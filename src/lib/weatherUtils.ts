@@ -168,3 +168,136 @@ export const exportToCSV = (data: any[]): string => {
   
   return csvRows.join('\n');
 };
+
+export const exportToXML = (data: any): string => {
+  const createXMLElement = (key: string, value: any): string => {
+    if (value === null || value === undefined) {
+      return `<${key}></${key}>`;
+    }
+    
+    if (Array.isArray(value)) {
+      return `<${key}>${value.map((item, index) => 
+        typeof item === 'object' 
+          ? createXMLObject(`item_${index}`, item)
+          : `<item>${escapeXML(String(item))}</item>`
+      ).join('')}</${key}>`;
+    }
+    
+    if (typeof value === 'object') {
+      return createXMLObject(key, value);
+    }
+    
+    return `<${key}>${escapeXML(String(value))}</${key}>`;
+  };
+  
+  const createXMLObject = (name: string, obj: any): string => {
+    const elements = Object.keys(obj).map(key => createXMLElement(key, obj[key]));
+    return `<${name}>${elements.join('')}</${name}>`;
+  };
+  
+  const escapeXML = (str: string): string => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
+  
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<weatherData>${createXMLObject('record', data)}</weatherData>`;
+};
+
+export const exportToMarkdown = (data: any): string => {
+  const formatMarkdownTable = (items: any[]): string => {
+    if (!items || items.length === 0) return '';
+    
+    const headers = Object.keys(items[0]);
+    let markdown = `| ${headers.join(' | ')} |\n| ${headers.map(() => '---').join(' | ')} |\n`;
+    
+    items.forEach(item => {
+      const row = headers.map(header => {
+        const value = item[header];
+        return typeof value === 'object' && value !== null 
+          ? JSON.stringify(value) 
+          : String(value || '');
+      });
+      markdown += `| ${row.join(' | ')} |\n`;
+    });
+    
+    return markdown;
+  };
+  
+  const formatMarkdownObject = (obj: any, level = 1): string => {
+    let md = '';
+    
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const value = obj[key];
+        
+        if (key === 'temperatures' && Array.isArray(value)) {
+          md += `\n${'#'.repeat(level + 1)} Temperature Records\n\n`;
+          md += formatMarkdownTable(value);
+          continue;
+        }
+        
+        if (Array.isArray(value)) {
+          md += `${'#'.repeat(level + 1)} ${key}\n\n`;
+          value.forEach((item, index) => {
+            md += `### Item ${index + 1}\n`;
+            md += typeof item === 'object' 
+              ? formatMarkdownObject(item, level + 2)
+              : `${item}\n\n`;
+          });
+          continue;
+        }
+        
+        if (typeof value === 'object' && value !== null) {
+          md += `${'#'.repeat(level + 1)} ${key}\n`;
+          md += formatMarkdownObject(value, level + 1);
+          continue;
+        }
+        
+        md += `**${key}**: ${value}\n\n`;
+      }
+    }
+    
+    return md;
+  };
+  
+  let markdown = `# Weather Record Export\n\n`;
+  markdown += `*Generated on ${new Date().toLocaleString()}*\n\n`;
+  markdown += formatMarkdownObject(data);
+  
+  return markdown;
+};
+
+interface PDFGenerationOptions {
+  title: string;
+}
+
+export const getPDFBlob = async (htmlContent: string): Promise<Blob> => {
+  // Dynamic import html2pdf.js
+  const html2pdf = (await import('html2pdf.js')).default;
+  
+  return new Promise((resolve, reject) => {
+    const element = document.createElement('div');
+    element.innerHTML = htmlContent;
+    document.body.appendChild(element);
+    
+    const options = {
+      margin: 10,
+      filename: 'weather-export.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().from(element).set(options).outputPdf('blob').then((pdf: Blob) => {
+      document.body.removeChild(element);
+      resolve(pdf);
+    }).catch((error: Error) => {
+      document.body.removeChild(element);
+      reject(error);
+    });
+  });
+};

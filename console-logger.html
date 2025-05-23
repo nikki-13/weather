@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Console Logger</title>
+  <script>
+    // Function to inject the script into the page
+    function injectScript() {
+      const script = document.createElement('script');
+      script.textContent = `
+        // Store the original console.error method
+        const originalConsoleError = console.error;
+        const originalConsoleLog = console.log;
+        
+        // Override console.error to log to our UI
+        console.error = function() {
+          // Call the original console.error
+          originalConsoleError.apply(console, arguments);
+          
+          // Log to our UI
+          const errorDiv = document.createElement('div');
+          errorDiv.style.color = 'red';
+          errorDiv.textContent = Array.from(arguments).join(' ');
+          document.getElementById('console-output').appendChild(errorDiv);
+        };
+
+        // Override console.log to also log to our UI
+        console.log = function() {
+          // Call the original console.log
+          originalConsoleLog.apply(console, arguments);
+          
+          // Log to our UI
+          const logDiv = document.createElement('div');
+          logDiv.textContent = Array.from(arguments).join(' ');
+          document.getElementById('console-output').appendChild(logDiv);
+        };
+
+        // Monitor for uncaught errors
+        window.addEventListener('error', function(e) {
+          const errorDiv = document.createElement('div');
+          errorDiv.style.color = 'red';
+          errorDiv.style.fontWeight = 'bold';
+          errorDiv.textContent = 'UNCAUGHT ERROR: ' + e.message + ' at ' + e.filename + ':' + e.lineno;
+          document.getElementById('console-output').appendChild(errorDiv);
+        });
+
+        // Log that we're ready
+        console.log('Console logger initialized');
+      `;
+      document.head.appendChild(script);
+    }
+  </script>
+</head>
+<body style="font-family: monospace; background: #f5f5f5; padding: 20px;">
+  <h1>Console Logger for Weather App</h1>
+  <p>Open the weather app in another tab, then refresh this page to see console logs.</p>
+  <button onclick="window.open('http://localhost:8080', '_blank')">Open Weather App</button>
+  <hr>
+  <h2>Console Output:</h2>
+  <div id="console-output" style="background: #111; color: #eee; padding: 10px; border-radius: 5px; height: 500px; overflow: auto; white-space: pre-wrap;"></div>
+  
+  <script>
+    injectScript();
+  </script>
+</body>
+</html>

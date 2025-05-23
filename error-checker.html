@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browser Error Check</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+    pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow: auto; }
+    button { padding: 8px 16px; background: #0077cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    #errors { margin-top: 20px; }
+    .error { color: red; margin-bottom: 10px; }
+    .log { margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Browser Error Check for Weather App</h1>
+  <p>This page will help diagnose issues with the weather app by extracting console errors.</p>
+  
+  <button id="checkErrors">Check for Console Errors</button>
+  <div id="errors"></div>
+
+  <script>
+    document.getElementById('checkErrors').addEventListener('click', async () => {
+      const errorsDiv = document.getElementById('errors');
+      errorsDiv.innerHTML = '<p>Fetching page and checking for errors...</p>';
+      
+      try {
+        // Try to fetch the main app page content
+        const response = await fetch('http://localhost:8080/');
+        const html = await response.text();
+        
+        // Create an iframe to load the content and capture errors
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        
+        // Override console in the iframe
+        const errors = [];
+        const logs = [];
+        
+        iframe.contentWindow.console.error = function() {
+          errors.push(Array.from(arguments).join(' '));
+        };
+        
+        iframe.contentWindow.console.log = function() {
+          logs.push(Array.from(arguments).join(' '));
+        };
+        
+        // Add error event listener
+        iframe.contentWindow.addEventListener('error', function(e) {
+          errors.push(`UNCAUGHT ERROR: ${e.message} at ${e.filename}:${e.lineno}`);
+        });
+        
+        // Write the HTML content to the iframe
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(html);
+        doc.close();
+        
+        // Wait a bit for errors to occur
+        setTimeout(() => {
+          // Display the results
+          let resultsHTML = '<h2>Results:</h2>';
+          
+          if (errors.length > 0) {
+            resultsHTML += '<h3>Errors:</h3>';
+            errors.forEach(error => {
+              resultsHTML += `<div class="error"><pre>${error}</pre></div>`;
+            });
+          } else {
+            resultsHTML += '<p>No JavaScript errors detected.</p>';
+          }
+          
+          if (logs.length > 0) {
+            resultsHTML += '<h3>Logs:</h3>';
+            logs.forEach(log => {
+              resultsHTML += `<div class="log"><pre>${log}</pre></div>`;
+            });
+          }
+          
+          errorsDiv.innerHTML = resultsHTML;
+          
+          // Clean up
+          document.body.removeChild(iframe);
+        }, 3000);
+      } catch (error) {
+        errorsDiv.innerHTML = `<div class="error"><p>Error fetching page: ${error.message}</p></div>`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,11 +11,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { WeatherHistoryRecord } from "@/types/weather";
-import { deleteWeatherRecord } from "@/services/weatherHistoryDb";
+import { deleteWeatherRecord_db } from "@/services/weatherHistoryDb_sql";
 import { useToast } from "@/components/ui/use-toast";
 import { formatDate } from "@/lib/weatherUtils";
 import WeatherHistoryEdit from "./WeatherHistoryEdit";
-import { AlertCircle, Edit2, Trash2, FileDown } from "lucide-react";
+import WeatherExportMenu from "./WeatherExportMenu";
+import BatchExportMenu from "./BatchExportMenu";
+import { AlertCircle, Edit2, Trash2 } from "lucide-react";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +29,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { exportToCSV, exportToJSON } from "@/lib/weatherUtils";
 
 interface WeatherHistoryListProps {
   records: WeatherHistoryRecord[];
@@ -40,9 +40,9 @@ const WeatherHistoryList = ({ records, onRecordChange }: WeatherHistoryListProps
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      const success = deleteWeatherRecord(id);
+      const success = await deleteWeatherRecord_db(id);
       if (success) {
         toast({
           title: "Record deleted",
@@ -71,65 +71,6 @@ const WeatherHistoryList = ({ records, onRecordChange }: WeatherHistoryListProps
     setEditDialogOpen(true);
   };
 
-  const handleExport = (record: WeatherHistoryRecord, format: 'json' | 'csv') => {
-    try {
-      let content: string;
-      let mimeType: string;
-      let fileName: string;
-
-      if (format === 'json') {
-        content = exportToJSON(record);
-        mimeType = 'application/json';
-        fileName = `weather-record-${record.id}.json`;
-      } else {
-        // Flatten record for CSV export
-        const flatRecords = record.temperatures?.map(temp => ({
-          location: record.location,
-          date: temp.date,
-          temp: temp.temp,
-          feels_like: temp.feels_like || '',
-          description: temp.description || '',
-          humidity: temp.humidity || '',
-          wind_speed: temp.wind_speed || '',
-        })) || [{
-          location: record.location,
-          startDate: record.startDate,
-          endDate: record.endDate,
-          createdAt: record.createdAt,
-        }];
-
-        content = exportToCSV(flatRecords);
-        mimeType = 'text/csv';
-        fileName = `weather-record-${record.id}.csv`;
-      }
-
-      // Create download link
-      const blob = new Blob([content], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      
-      // Clean up
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Export successful",
-        description: `Weather data exported as ${format.toUpperCase()}`,
-      });
-    } catch (error) {
-      console.error("Export error:", error);
-      toast({
-        title: "Export failed",
-        description: "Failed to export weather data",
-        variant: "destructive",
-      });
-    }
-  };
-
   if (records.length === 0) {
     return (
       <Card>
@@ -153,8 +94,9 @@ const WeatherHistoryList = ({ records, onRecordChange }: WeatherHistoryListProps
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Weather History</CardTitle>
+        {records.length > 0 && <BatchExportMenu records={records} />}
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -172,22 +114,7 @@ const WeatherHistoryList = ({ records, onRecordChange }: WeatherHistoryListProps
                   </p>
                 </div>
                 <div className="flex space-x-2 mt-2 md:mt-0">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleExport(record, 'json')}
-                  >
-                    <FileDown className="h-4 w-4 mr-1" />
-                    JSON
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleExport(record, 'csv')}
-                  >
-                    <FileDown className="h-4 w-4 mr-1" />
-                    CSV
-                  </Button>
+                  <WeatherExportMenu record={record} />
                   <Button
                     variant="outline"
                     size="sm"
