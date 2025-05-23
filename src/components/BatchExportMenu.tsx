@@ -60,20 +60,22 @@ const BatchExportMenu: React.FC<BatchExportMenuProps> = ({
           <h2>Record #${i + 1}: ${record.location}</h2>
           <p><strong>Period:</strong> ${formatDate(record.startDate)} to ${formatDate(record.endDate)}</p>
           <p><strong>Created:</strong> ${formatDate(record.createdAt)}</p>
+          <p><strong>Coordinates:</strong> ${record.lat ? `${record.lat}° N, ${record.lon}° E` : 'Not available'}</p>
       `;
 
       if (record.temperatures && record.temperatures.length > 0) {
         html += `
-          <h3>Temperature Records</h3>
+          <h3>Weather Data</h3>
           <table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
             <thead>
-              <tr>
-                <th>Date</th>
+              <tr style="background-color: #f2f2f2;">
+                <th>Date & Time</th>
                 <th>Temperature</th>
                 <th>Feels Like</th>
-                <th>Description</th>
+                <th>Weather</th>
                 <th>Humidity</th>
-                <th>Wind Speed</th>
+                <th>Wind</th>
+                <th>Additional Info</th>
               </tr>
             </thead>
             <tbody>
@@ -83,11 +85,29 @@ const BatchExportMenu: React.FC<BatchExportMenuProps> = ({
           html += `
             <tr>
               <td>${formatDate(temp.date)}</td>
-              <td>${temp.temp}°C</td>
+              <td>
+                ${temp.temp}°C
+                ${temp.temp_min && temp.temp_max ? 
+                  `<br><small>Min: ${temp.temp_min}°C<br>Max: ${temp.temp_max}°C</small>` : ''}
+              </td>
               <td>${temp.feels_like || "-"}°C</td>
-              <td>${temp.description || "-"}</td>
+              <td>
+                ${temp.description ? `<strong>${temp.description}</strong>` : '-'}
+                ${temp.icon ? `<br><small>Icon: ${temp.icon}</small>` : ''}
+              </td>
               <td>${temp.humidity || "-"}%</td>
-              <td>${temp.wind_speed || "-"} m/s</td>
+              <td>
+                ${temp.wind_speed ? `${temp.wind_speed} m/s` : '-'}
+                ${temp.wind_deg ? `<br><small>Direction: ${temp.wind_deg}°</small>` : ''}
+                ${temp.wind_gust ? `<br><small>Gusts: ${temp.wind_gust} m/s</small>` : ''}
+              </td>
+              <td>
+                ${temp.pressure ? `Pressure: ${temp.pressure} hPa<br>` : ''}
+                ${temp.visibility ? `Visibility: ${temp.visibility} m<br>` : ''}
+                ${temp.cloudiness !== undefined ? `Cloudiness: ${temp.cloudiness}%<br>` : ''}
+                ${temp.rain_1h ? `Rain (1h): ${temp.rain_1h} mm<br>` : ''}
+                ${temp.snow_1h ? `Snow (1h): ${temp.snow_1h} mm` : ''}
+              </td>
             </tr>
           `;
         });
@@ -115,18 +135,32 @@ const BatchExportMenu: React.FC<BatchExportMenuProps> = ({
           flattened.push({
             id: record.id,
             location: record.location,
+            latitude: record.lat || "",
+            longitude: record.lon || "",
             date: temp.date,
             temp: temp.temp,
+            temp_min: temp.temp_min || "",
+            temp_max: temp.temp_max || "",
             feels_like: temp.feels_like || '',
             description: temp.description || '',
             humidity: temp.humidity || '',
+            pressure: temp.pressure || "",
+            visibility: temp.visibility || "",
+            cloudiness: temp.cloudiness || "",
             wind_speed: temp.wind_speed || '',
+            wind_direction: temp.wind_deg || "",
+            wind_gust: temp.wind_gust || "",
+            rain_1h: temp.rain_1h || "",
+            snow_1h: temp.snow_1h || "",
+            icon: temp.icon || "",
           });
         });
       } else {
         flattened.push({
           id: record.id,
           location: record.location,
+          latitude: record.lat || "",
+          longitude: record.lon || "",
           startDate: record.startDate,
           endDate: record.endDate,
           createdAt: record.createdAt,

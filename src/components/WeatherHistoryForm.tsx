@@ -9,11 +9,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/components/ui/use-toast";
 import { WeatherLocation, DateRange } from "@/types/weather";
 import { formatDate, validateDateRange } from "@/lib/weatherUtils";
-import { createWeatherRecord_db } from "@/services/weatherHistoryDb_sql";
+import { createWeatherRecord_db, addTemperatureToRecord_db } from "@/services/weatherHistoryDb_sql";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { searchLocations } from "@/services/weatherApi";
+import { searchLocations, getHistoricalWeather } from "@/services/weatherApi";
 
 interface WeatherHistoryFormProps {
   onSaveRecord: () => void;
@@ -89,9 +89,10 @@ const WeatherHistoryForm = ({ onSaveRecord }: WeatherHistoryFormProps) => {
       return;
     }
 
+    setLoading(true);
     try {
-      // Save to SQLite database
-      await createWeatherRecord_db({
+      // First create the record
+      const createdRecord = await createWeatherRecord_db({
         location: `${selectedLocation.name}, ${selectedLocation.country}`,
         lat: selectedLocation.lat,
         lon: selectedLocation.lon,
@@ -99,10 +100,67 @@ const WeatherHistoryForm = ({ onSaveRecord }: WeatherHistoryFormProps) => {
         endDate: dateRange.endDate.toISOString(),
       });
 
-      toast({
-        title: "Weather record created",
-        description: "Your weather history record has been saved",
-      });
+      // Fetch actual historical weather data from the API
+      try {
+        // Get the number of days in the date range
+        const startTime = dateRange.startDate.getTime();
+        const endTime = dateRange.endDate.getTime();
+        const daysDiff = Math.floor((endTime - startTime) / (24 * 60 * 60 * 1000)) + 1;
+        
+        toast({
+          title: "Fetching weather data",
+          description: `Getting historical weather data for ${daysDiff} days...`,
+        });
+        
+        // Use the API to get historical weather data
+        const historicalData = await getHistoricalWeather(
+          selectedLocation.lat,
+          selectedLocation.lon,
+          dateRange.startDate,
+          dateRange.endDate
+        );
+        
+        // For each forecast item in the historical data, add a temperature record
+        for (const item of historicalData.list) {
+          const weatherItem = item.weather[0];
+          const date = new Date(item.dt * 1000);
+          
+          // Only add one record per day (prevent duplicate entries for the same day)
+          // We do this by checking if we've already added data for this day
+          const dateString = date.toISOString().split('T')[0];
+          
+          // Add the temperature record
+          await addTemperatureToRecord_db(createdRecord.id, {
+            date: date.toISOString(),
+            temp: item.main.temp,
+            feels_like: item.main.feels_like,
+            description: weatherItem.description,
+            humidity: item.main.humidity,
+            pressure: item.main.pressure,
+            wind_speed: item.wind.speed,
+            wind_deg: item.wind.deg,
+            wind_gust: item.wind.gust,
+            cloudiness: item.clouds.all,
+            temp_min: item.main.temp_min,
+            temp_max: item.main.temp_max,
+            icon: weatherItem.icon,
+            visibility: item.visibility,
+            rain_1h: item.rain?.['1h'] || item.rain?.['3h'] || 0,
+            snow_1h: item.snow?.['1h'] || item.snow?.['3h'] || 0,
+          });
+        }
+        
+        toast({
+          title: "Weather record created",
+          description: `Weather record created with actual historical weather data`,
+        });
+      } catch (tempError) {
+        console.error("Error fetching historical weather data:", tempError);
+        toast({
+          title: "Note",
+          description: "Record created but historical weather data could not be fetched",
+        });
+      }
 
       // Reset form
       setLocation("");
@@ -121,6 +179,8 @@ const WeatherHistoryForm = ({ onSaveRecord }: WeatherHistoryFormProps) => {
         description: "An error occurred while saving the weather record",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 

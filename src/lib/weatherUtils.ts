@@ -171,10 +171,36 @@ export const exportToCSV = (data: any[]): string => {
 
 export const exportToXML = (data: any): string => {
   const createXMLElement = (key: string, value: any): string => {
+    // Handle null or undefined values
     if (value === null || value === undefined) {
       return `<${key}></${key}>`;
     }
     
+    // Special handling for temperatures array to better structure the XML
+    if (key === 'temperatures' && Array.isArray(value)) {
+      return `<${key}>${value.map((item) => 
+        `<weatherRecord>
+          <date>${escapeXML(String(item.date || ''))}</date>
+          <temperature>${escapeXML(String(item.temp || ''))}</temperature>
+          ${item.temp_min ? `<temperatureMin>${escapeXML(String(item.temp_min))}</temperatureMin>` : ''}
+          ${item.temp_max ? `<temperatureMax>${escapeXML(String(item.temp_max))}</temperatureMax>` : ''}
+          ${item.feels_like ? `<feelsLike>${escapeXML(String(item.feels_like))}</feelsLike>` : ''}
+          ${item.description ? `<description>${escapeXML(String(item.description))}</description>` : ''}
+          ${item.humidity ? `<humidity>${escapeXML(String(item.humidity))}</humidity>` : ''}
+          ${item.wind_speed ? `<windSpeed>${escapeXML(String(item.wind_speed))}</windSpeed>` : ''}
+          ${item.wind_deg ? `<windDirection>${escapeXML(String(item.wind_deg))}</windDirection>` : ''}
+          ${item.wind_gust ? `<windGust>${escapeXML(String(item.wind_gust))}</windGust>` : ''}
+          ${item.pressure ? `<pressure>${escapeXML(String(item.pressure))}</pressure>` : ''}
+          ${item.visibility ? `<visibility>${escapeXML(String(item.visibility))}</visibility>` : ''}
+          ${item.cloudiness !== undefined ? `<cloudiness>${escapeXML(String(item.cloudiness))}</cloudiness>` : ''}
+          ${item.rain_1h ? `<rain>${escapeXML(String(item.rain_1h))}</rain>` : ''}
+          ${item.snow_1h ? `<snow>${escapeXML(String(item.snow_1h))}</snow>` : ''}
+          ${item.icon ? `<icon>${escapeXML(String(item.icon))}</icon>` : ''}
+        </weatherRecord>`
+      ).join('')}</${key}>`;
+    }
+    
+    // Handle regular arrays
     if (Array.isArray(value)) {
       return `<${key}>${value.map((item, index) => 
         typeof item === 'object' 
@@ -183,16 +209,24 @@ export const exportToXML = (data: any): string => {
       ).join('')}</${key}>`;
     }
     
+    // Handle objects
     if (typeof value === 'object') {
       return createXMLObject(key, value);
     }
     
+    // Handle simple values
     return `<${key}>${escapeXML(String(value))}</${key}>`;
   };
   
   const createXMLObject = (name: string, obj: any): string => {
+    // Add metadata for location
+    let metadata = '';
+    if (name === 'record' && obj.lat && obj.lon) {
+      metadata = `<coordinates><latitude>${obj.lat}</latitude><longitude>${obj.lon}</longitude></coordinates>`;
+    }
+    
     const elements = Object.keys(obj).map(key => createXMLElement(key, obj[key]));
-    return `<${name}>${elements.join('')}</${name}>`;
+    return `<${name}>${metadata}${elements.join('')}</${name}>`;
   };
   
   const escapeXML = (str: string): string => {
@@ -208,9 +242,45 @@ export const exportToXML = (data: any): string => {
 };
 
 export const exportToMarkdown = (data: any): string => {
-  const formatMarkdownTable = (items: any[]): string => {
+  const formatMarkdownTable = (items: any[], title?: string): string => {
     if (!items || items.length === 0) return '';
     
+    // For temperature records, create a more detailed table with only relevant columns
+    if (title === 'Temperature Records') {
+      const tempHeaders = [
+        'Date', 'Temperature (°C)', 'Details', 'Wind', 'Conditions', 'Other'
+      ];
+      
+      let markdown = `| ${tempHeaders.join(' | ')} |\n| ${tempHeaders.map(() => '---').join(' | ')} |\n`;
+      
+      items.forEach(item => {
+        const tempDetails = item.temp_min && item.temp_max ? 
+          `Min: ${item.temp_min}°C, Max: ${item.temp_max}°C<br>Feels like: ${item.feels_like || '-'}°C` : 
+          `Feels like: ${item.feels_like || '-'}°C`;
+          
+        const windDetails = item.wind_speed ? 
+          `${item.wind_speed} m/s${item.wind_deg ? `<br>Direction: ${item.wind_deg}°` : ''}${item.wind_gust ? `<br>Gusts: ${item.wind_gust} m/s` : ''}` : 
+          '-';
+          
+        const conditions = item.description ? 
+          `${item.description}${item.humidity ? `<br>Humidity: ${item.humidity}%` : ''}` : 
+          (item.humidity ? `Humidity: ${item.humidity}%` : '-');
+          
+        const other = [
+          item.pressure ? `Pressure: ${item.pressure} hPa` : '',
+          item.visibility ? `Visibility: ${item.visibility} m` : '',
+          item.cloudiness !== undefined ? `Cloudiness: ${item.cloudiness}%` : '',
+          item.rain_1h ? `Rain: ${item.rain_1h} mm` : '',
+          item.snow_1h ? `Snow: ${item.snow_1h} mm` : ''
+        ].filter(Boolean).join('<br>') || '-';
+        
+        markdown += `| ${item.date} | ${item.temp}°C | ${tempDetails} | ${windDetails} | ${conditions} | ${other} |\n`;
+      });
+      
+      return markdown;
+    }
+    
+    // Default table formatting for other data
     const headers = Object.keys(items[0]);
     let markdown = `| ${headers.join(' | ')} |\n| ${headers.map(() => '---').join(' | ')} |\n`;
     
@@ -235,8 +305,8 @@ export const exportToMarkdown = (data: any): string => {
         const value = obj[key];
         
         if (key === 'temperatures' && Array.isArray(value)) {
-          md += `\n${'#'.repeat(level + 1)} Temperature Records\n\n`;
-          md += formatMarkdownTable(value);
+          md += `\n${'#'.repeat(level + 1)} Weather Data\n\n`;
+          md += formatMarkdownTable(value, 'Temperature Records');
           continue;
         }
         
@@ -254,6 +324,16 @@ export const exportToMarkdown = (data: any): string => {
         if (typeof value === 'object' && value !== null) {
           md += `${'#'.repeat(level + 1)} ${key}\n`;
           md += formatMarkdownObject(value, level + 1);
+          continue;
+        }
+        
+        // Format coordinates nicely when they exist
+        if (key === 'lat' && obj['lon'] !== undefined) {
+          md += `**Coordinates**: ${value}° N, ${obj['lon']}° E\n\n`;
+          continue;
+        }
+        if (key === 'lon' && obj['lat'] !== undefined) {
+          // Skip to avoid duplicate, handled above
           continue;
         }
         
