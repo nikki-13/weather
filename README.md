@@ -1,73 +1,87 @@
-# Welcome to your Lovable project
+# Weather Application
 
-## Project info
+A modern weather application built with React, TypeScript, and Vite. This application allows users to:
 
-**URL**: https://lovable.dev/projects/8095681f-8098-4787-90ac-cd1922562165
+- Search for weather by location
+- View current weather conditions
+- See weather forecasts
+- Track weather history
+- Visualize weather data with beautiful UI components
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Current Weather Display**: Real-time weather information including temperature, conditions, and other metrics
+- **Weather Forecast**: Multi-day weather predictions 
+- **Search Functionality**: Find weather for any location
+- **Weather History**: Save and track weather data over time
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8095681f-8098-4787-90ac-cd1922562165) and start prompting.
+- **Frontend Framework**: React with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **State Management**: React hooks
+- **API Integration**: OpenWeatherMap API (or similar)
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js (v16 or later)
+- npm or bun
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Installation
 
-Follow these steps:
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/weather.git
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Navigate to project directory
+cd weather
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
+# or using bun
+bun install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Create a .env file and add your API key
+# Example:
+# VITE_WEATHER_API_KEY=your_api_key_here
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
+# or using bun
+bun run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Project Structure
 
-**Use GitHub Codespaces**
+```
+src/
+├── components/          # UI components
+├── hooks/               # Custom React hooks
+├── lib/                 # Utility functions
+├── pages/               # Page components
+├── services/            # API and data services
+└── types/               # TypeScript type definitions
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Contributing
 
-## What technologies are used for this project?
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-This project is built with:
+## License
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+This project is licensed under the MIT License.
 
-## How can I deploy this project?
+## Acknowledgments
 
-Simply open [Lovable](https://lovable.dev/projects/8095681f-8098-4787-90ac-cd1922562165) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Weather data provided by [OpenWeatherMap](https://openweathermap.org/) (or your chosen API)
+- UI components from [shadcn/ui](https://ui.shadcn.com/)
